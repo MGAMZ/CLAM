@@ -21,13 +21,52 @@ from dataset_modules.dataset_generic import (
 
 class MultiChannel_MIL_Dataset(Generic_MIL_Dataset):
     def __init__(self,
-                 data_dir,
-                 csv_path='dataset_csv/multi_channel_labels.csv',
-                 label_cols=None,
-                 **kwargs):
-        super(MultiChannel_MIL_Dataset, self).__init__(csv_path=csv_path, **kwargs)
-        self.data_dir = data_dir
-        self.label_cols = label_cols if label_cols else []
+        data_dir,
+        csv_path = 'dataset_csv/ccrcc_clean.csv',
+        shuffle = False, 
+        seed = 7, 
+        print_info = True,
+        label_dict = {},
+        filter_dict = {},
+        ignore=[],
+        patient_strat=False,
+        label_col = None,
+        patient_voting = 'max',
+    ):
+        """
+        Args:
+            csv_file (string): Path to the csv file with annotations.
+            shuffle (boolean): Whether to shuffle
+            seed (int): random seed for shuffling the data
+            print_info (boolean): Whether to print a summary of the dataset
+            label_dict (dict): Dictionary with key, value pairs for converting str labels to int
+            ignore (list): List containing class labels to ignore
+        """
+        self.label_dict = label_dict
+        self.num_classes = len(set(self.label_dict.values()))
+        self.seed = seed
+        self.print_info = print_info
+        self.patient_strat = patient_strat
+        self.train_ids, self.val_ids, self.test_ids  = (None, None, None)
+        self.data_dir = None
+        if not label_col:
+            label_col = 'label'
+        self.label_col = label_col
+
+        slide_data = pd.read_csv(csv_path)
+
+        ###shuffle data
+        if shuffle:
+            np.random.seed(seed)
+            np.random.shuffle(slide_data)
+
+        self.slide_data = slide_data
+
+        self.patient_data_prep(patient_voting)
+        self.cls_ids_prep()
+
+        if print_info:
+            self.summarize()
 
     def __getitem__(self, idx):
         slide_id = self.slide_data['slide_id'][idx]
@@ -141,7 +180,7 @@ def parse_args():
         help="size of model, does not affect mil",
     )
     parser.add_argument(
-        "--task", type=str, choices=["task_1_tumor_vs_normal", "task_2_tumor_subtyping"]
+        "--task", type=str, choices=["mgam"], default="mgam", help="task type"
     )
     ### CLAM specific options
     parser.add_argument(
@@ -221,7 +260,7 @@ def prepare():
     print("\nLoad Dataset")
 
     assert args.task == "mgam"
-    dataset = Generic_MIL_Dataset(
+    dataset = MultiChannel_MIL_Dataset(
         csv_path="/fileser51/zhangyiqin.sx/FudanTumorDoubleblind_Data/label.csv",
         data_dir=os.path.join(args.data_root_dir, "ExtractedFeat"),
         shuffle=False,

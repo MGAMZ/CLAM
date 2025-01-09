@@ -1,7 +1,7 @@
 import os
 from functools import partial
 import timm
-from .timm_wrapper import TimmCNNEncoder
+from .timm_wrapper_mgam import TimmCNNEncoder
 import torch
 from utils.constants import MODEL2CONSTANTS
 from utils.transform_utils import get_eval_transforms

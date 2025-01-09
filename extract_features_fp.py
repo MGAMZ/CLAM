@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
 	loader_kwargs = {'num_workers': 8, 'pin_memory': True} if device.type == "cuda" else {}
 
-	for bag_candidate_idx in tqdm(range(total)):
+	for bag_candidate_idx in tqdm(range(total), dynamic_ncols=True):
 		slide_id = bags_dataset[bag_candidate_idx].split(args.slide_ext)[0]
 		bag_name = slide_id+'.h5'
 		h5_file_path = os.path.join(args.data_h5_dir, 'patches', bag_name)
@@ -98,7 +98,7 @@ if __name__ == '__main__':
 		time_start = time.time()
 		wsi = openslide.open_slide(slide_file_path)
 		dataset = Whole_Slide_Bag_FP(file_path=h5_file_path, 
-							   		 wsi=wsi, 
+									 wsi=wsi, 
 									 img_transforms=img_transforms)
 
 		loader = DataLoader(dataset=dataset, batch_size=args.batch_size, **loader_kwargs)

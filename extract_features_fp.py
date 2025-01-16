@@ -34,12 +34,12 @@ def compute_w_loader(output_path, loader, model, verbose = 0):
 	mode = 'w'
 	for count, data in enumerate(tqdm(loader)):
 		with torch.inference_mode():	
-			batch = data['img']
+			batch = data['img'].half()
 			coords = data['coord'].numpy().astype(np.int32)
 			batch = batch.to(device, non_blocking=True)
 			
 			features = model(batch)
-			features = features.cpu().numpy().astype(np.float32)
+			features = features.cpu().numpy().astype(np.float16)
 
 			asset_dict = {'features': features, 'coords': coords}
 			save_hdf5(output_path, asset_dict, attr_dict= None, mode=mode)
@@ -54,7 +54,8 @@ parser.add_argument('--data_slide_dir', type=str, default=None)
 parser.add_argument('--slide_ext', type=str, default= '.svs')
 parser.add_argument('--csv_path', type=str, default=None)
 parser.add_argument('--feat_dir', type=str, default=None)
-parser.add_argument('--model_name', type=str, default='resnet50_trunc', choices=['resnet50_trunc', 'uni_v1', 'conch_v1'])
+parser.add_argument('--model_name', type=str, default='resnet50_trunc', 
+                    choices=['resnet50_trunc', 'uni_v2', 'conch_v1'])
 parser.add_argument('--batch_size', type=int, default=256)
 parser.add_argument('--no_auto_skip', default=False, action='store_true')
 parser.add_argument('--target_patch_size', type=int, default=224)
@@ -77,7 +78,7 @@ if __name__ == '__main__':
 	model, img_transforms = get_encoder(args.model_name, target_img_size=args.target_patch_size)
 			
 	_ = model.eval()
-	model = model.to(device)
+	model = model.to(device).half()
 	total = len(bags_dataset)
 
 	loader_kwargs = {'num_workers': 8, 'pin_memory': True} if device.type == "cuda" else {}
